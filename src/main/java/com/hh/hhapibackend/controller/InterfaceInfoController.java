@@ -4,10 +4,7 @@ import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hh.hhapibackend.annotation.AuthCheck;
-import com.hh.hhapibackend.common.BaseResponse;
-import com.hh.hhapibackend.common.DeleteRequest;
-import com.hh.hhapibackend.common.ErrorCode;
-import com.hh.hhapibackend.common.ResultUtils;
+import com.hh.hhapibackend.common.*;
 import com.hh.hhapibackend.constant.CommonConstant;
 import com.hh.hhapibackend.constant.UserConstant;
 import com.hh.hhapibackend.exception.BusinessException;
@@ -17,8 +14,10 @@ import com.hh.hhapibackend.model.dto.interfaceinfo.InterfaceInfoQueryRequest;
 import com.hh.hhapibackend.model.dto.interfaceinfo.InterfaceInfoUpdateRequest;
 import com.hh.hhapibackend.model.entity.InterfaceInfo;
 import com.hh.hhapibackend.model.entity.User;
+import com.hh.hhapibackend.model.enums.InterfaceInfoStatusEnum;
 import com.hh.hhapibackend.service.InterfaceInfoService;
 import com.hh.hhapibackend.service.UserService;
+import com.hh.hhapiclientsdk.client.HhApiClient;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -41,6 +40,9 @@ public class InterfaceInfoController {
     
     @Resource
     private UserService userService;
+
+    @Resource
+    private HhApiClient hhApiClient;
 
 
     /**
@@ -188,6 +190,69 @@ public class InterfaceInfoController {
                 sortOrder.equals(CommonConstant.SORT_ORDER_ASC), sortField);
         Page<InterfaceInfo> interfaceInfoPage = interfaceInfoService.page(new Page<>(current, size), queryWrapper);
         return ResultUtils.success(interfaceInfoPage);
+    }
+
+    /**
+     * 发布
+     *
+     * @param idRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/online")
+    @AuthCheck(mustRole = "admin")
+    public BaseResponse<Boolean> onlineInterfaceInfo(@RequestBody IdRequest idRequest,
+                                                     HttpServletRequest request) {
+        if (idRequest == null || idRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        long id = idRequest.getId();
+        // 判断是否存在
+        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
+        if (oldInterfaceInfo == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        // 判断该接口是否可以调用
+        com.hh.hhapiclientsdk.model.User user = new com.hh.hhapiclientsdk.model.User();
+        user.setUsername("test");
+        String username = hhApiClient.getUserNameByPost(user);
+        if (StringUtils.isBlank(username)) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "接口验证失败");
+        }
+        // 仅本人或管理员可修改
+        InterfaceInfo interfaceInfo = new InterfaceInfo();
+        interfaceInfo.setId(id);
+        interfaceInfo.setStatus(InterfaceInfoStatusEnum.ONLINE.getValue());
+        boolean result = interfaceInfoService.updateById(interfaceInfo);
+        return ResultUtils.success(result);
+    }
+
+    /**
+     * 下线
+     *
+     * @param idRequest
+     * @param request
+     * @return
+     */
+    @PostMapping("/offline")
+    @AuthCheck(mustRole = "admin")
+    public BaseResponse<Boolean> offlineInterfaceInfo(@RequestBody IdRequest idRequest,
+                                                      HttpServletRequest request) {
+        if (idRequest == null || idRequest.getId() <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        long id = idRequest.getId();
+        // 判断是否存在
+        InterfaceInfo oldInterfaceInfo = interfaceInfoService.getById(id);
+        if (oldInterfaceInfo == null) {
+            throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
+        }
+        // 仅本人或管理员可修改
+        InterfaceInfo interfaceInfo = new InterfaceInfo();
+        interfaceInfo.setId(id);
+        interfaceInfo.setStatus(InterfaceInfoStatusEnum.OFFLINE.getValue());
+        boolean result = interfaceInfoService.updateById(interfaceInfo);
+        return ResultUtils.success(result);
     }
 
 }

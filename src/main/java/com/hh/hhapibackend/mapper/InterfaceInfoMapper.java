@@ -1,6 +1,7 @@
 package com.hh.hhapibackend.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.hh.hhapibackend.model.entity.InterfaceInfo;
+import org.apache.ibatis.annotations.Mapper;
 
 /**
 * @author hanhu
@@ -8,6 +9,7 @@ import com.hh.hhapibackend.model.entity.InterfaceInfo;
 * @createDate 2024-06-28 21:04:19
 * @Entity generator.domain.InterfaceInfo
 */
+
 public interface InterfaceInfoMapper extends BaseMapper<InterfaceInfo> {
 
 }

@@ -98,4 +98,8 @@ knife4j:
       default:
         api-rule: package
         api-rule-resources:
-          - com.hh.hh-api-backend.controller
+          - com.hh.hhapibackend.controller
+hhapi:
+  client:
+    access-key: hanu
+    secret-key: 123456
